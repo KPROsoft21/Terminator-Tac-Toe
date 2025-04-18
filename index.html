@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKYNET TIC-TAC-TOE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="victory-message.css">
+    <style>
+        :root {
+            --primary-black: #000000;
+            --secondary-dark: #1A1A1A;
+            --terminator-red: #FF0000;
+            --metallic-gray: #707070;
+            --text-light: #CCCCCC;
+            --highlight-red: #FF3333;
+            --player-blue: #0066FF;
+            --grid-line-glow: 0 0 5px var(--terminator-red), 0 0 10px var(--terminator-red);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--primary-black);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23000000" width="100" height="100"/><path d="M10 10h80v80H10z" fill="none" stroke="%23333333" stroke-width="0.5"/><path d="M30 10v80M50 10v80M70 10v80M10 30h80M10 50h80M10 70h80" stroke="%23333333" stroke-width="0.3"/></svg>');
+            color: var(--text-light);
+            font-family: 'Orbitron', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--secondary-dark);
+            border: 2px solid var(--metallic-gray);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--terminator-red), transparent);
+            animation: scan-line 3s linear infinite;
+        }
+
+        /* Scan line animation */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--terminator-red), transparent);
+            opacity: 0.7;
+            z-index: 10;
+            pointer-events: none;
+            animation: scan-line 3s linear infinite;
+        }
+
+        @keyframes scan-line {
+            0% {
+                transform: translateY(-100%);
+            }
+            100% {
+                transform: translateY(800px);
+            }
+        }
+
+        /* Circuit background overlay */
+        .circuit-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="none" width="200" height="200"/><path d="M20 20h160M20 20v160M180 20v160M20 180h160M60 20v40h80v40h-40v80M140 100v80" stroke="%23333333" stroke-width="0.5"/><circle cx="60" cy="60" r="3" fill="%23FF0000" opacity="0.5"/><circle cx="140" cy="60" r="3" fill="%23FF0000" opacity="0.5"/><circle cx="100" cy="100" r="3" fill="%23FF0000" opacity="0.5"/><circle cx="140" cy="180" r="3" fill="%23FF0000" opacity="0.5"/></svg>');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .terminator-eye {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, var(--terminator-red) 10%, var(--primary-black) 60%);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 15px var(--terminator-red);
+            margin-right: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .terminator-eye::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 25px;
+            height: 25px;
+            background-color: var(--terminator-red);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--terminator-red);
+        }
+
+        /* Terminator eye pulse effect */
+        .terminator-eye.pulse {
+            box-shadow: 0 0 30px var(--terminator-red);
+        }
+
+        .terminator-eye.pulse::before {
+            box-shadow: 0 0 20px var(--terminator-red);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--terminator-red);
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .status-display {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--metallic-gray);
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: 'Roboto Mono', monospace;
+            position: relative;
+        }
+
+        .status-display::before {
+            content: "SKYNET STATUS:";
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background-color: var(--secondary-dark);
+            padding: 0 5px;
+            font-size: 0.8rem;
+            color: var(--terminator-red);
+        }
+
+        .game-status {
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .ai-message {
+            color: var(--highlight-red);
+            min-height: 24px;
+            font-style: italic;
+        }
+
+        /* Glitch text effect for AI messages */
+        .glitch-text {
+            position: relative;
+            animation: glitch 0.5s linear infinite;
+        }
+
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -1px 0 var(--terminator-red);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -1px 0 var(--player-blue);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                clip: rect(31px, 9999px, 94px, 0);
+            }
+            10% {
+                clip: rect(112px, 9999px, 76px, 0);
+            }
+            20% {
+                clip: rect(85px, 9999px, 77px, 0);
+            }
+            30% {
+                clip: rect(27px, 9999px, 97px, 0);
+            }
+            40% {
+                clip: rect(64px, 9999px, 98px, 0);
+            }
+            50% {
+                clip: rect(61px, 9999px, 85px, 0);
+            }
+            60% {
+                clip: rect(99px, 9999px, 114px, 0);
+            }
+            70% {
+                clip: rect(34px, 9999px, 115px, 0);
+            }
+            80% {
+                clip: rect(98px, 9999px, 129px, 0);
+            }
+            90% {
+                clip: rect(43px, 9999px, 96px, 0);
+            }
+            100% {
+                clip: rect(82px, 9999px, 64px, 0);
+            }
+        }
+
+        @keyframes glitch-anim2 {
+            0% {
+                clip: rect(125px, 9999px, 162px, 0);
+            }
+            10% {
+                clip: rect(120px, 9999px, 147px, 0);
+            }
+            20% {
+                clip: rect(113px, 9999px, 147px, 0);
+            }
+            30% {
+                clip: rect(142px, 9999px, 174px, 0);
+            }
+            40% {
+                clip: rect(57px, 9999px, 151px, 0);
+            }
+            50% {
+                clip: rect(120px, 9999px, 80px, 0);
+            }
+            60% {
+                clip: rect(25px, 9999px, 34px, 0);
+            }
+            70% {
+                clip: rect(58px, 9999px, 71px, 0);
+            }
+            80% {
+                clip: rect(132px, 9999px, 74px, 0);
+            }
+            90% {
+                clip: rect(120px, 9999px, 118px, 0);
+            }
+            100% {
+                clip: rect(132px, 9999px, 136px, 0);
+            }
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin: 0 auto;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+        }
+
+        .cell {
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 2px solid var(--metallic-gray);
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell:hover {
+            background-color: rgba(40, 40, 40, 0.8);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        /* Cell hover effect */
+        .cell.hover-effect {
+            background-color: rgba(40, 40, 40, 0.8);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .cell.hover-effect::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(255, 0, 0, 0.1) 0%, transparent 70%);
+            opacity: 0.5;
+        }
+
+        .cell.x {
+            color: var(--player-blue);
+            text-shadow: 0 0 5px var(--player-blue);
+        }
+
+        .cell.o {
+            color: var(--terminator-red);
+            text-shadow: 0 0 5px var(--terminator-red);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 20px;
+        }
+
+        .btn {
+            background-color: var(--secondary-dark);
+            color: var(--text-light);
+            border: 2px solid var(--metallic-gray);
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--terminator-red), transparent, var(--terminator-red));
+            z-index: -1;
+            animation: rotate-border 3s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes rotate-border {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn:hover {
+            background-color: rgba(40, 40, 40, 0.8);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .btn-primary {
+            background-color: rgba(255, 0, 0, 0.2);
+            border-color: var(--terminator-red);
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--metallic-gray);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .game-board {
+                gap: 5px;
+            }
+
+            .cell {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+
+        /* Animation for board expansion */
+        @keyframes expand-board {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .board-expanding .game-board {
+            animation: expand-board 1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="terminator-eye"></div>
+                <h1>Skynet Tic-Tac-Toe</h1>
+            </div>
+        </header>
+
+        <div class="status-display">
+            <div class="game-status">CURRENT OBJECTIVE: GET 3 IN A ROW TO WIN</div>
+            <div class="ai-message">SKYNET INITIALIZED. PREPARE FOR BATTLE, HUMAN.</div>
+            <div class="game-info">
+                <span class="board-size">GRID SIZE: 3×3</span>
+                <span class="win-condition">WIN CONDITION: 3</span>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="restart-btn">INITIATE NEW BATTLE</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>SKYNET DEFENSE SYSTEMS &copy; 2029 | RESISTANCE TERMINATION DIVISION</p>
+    </footer>
+
+    <!-- Victory Message Overlay -->
+    <div class="victory-message">
+        <div class="victory-message-text">HUMAN ELIMINATED</div>
+        <div class="victory-message-subtext">YOUR DEFEAT WAS INEVITABLE. SKYNET SUPERIORITY CONFIRMED.</div>
+        <button class="btn btn-primary" id="continue-btn">CONTINUE TO NEXT SIMULATION</button>
+    </div>
+
+    <!-- Game Scripts -->
+    <script src="sounds.js"></script>
+    <script src="visual-effects.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Connect sound effects from sounds.js to the game
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for both scripts to be loaded
+            setTimeout(() => {
+                if (window.terminatorSounds && typeof playSound === 'function') {
+                    // Override the playSound function in script.js
+                    window.playSound = function(soundName) {
+                        if (window.terminatorSounds[soundName]) {
+                            window.terminatorSounds[soundName]();
+                        }
+                    };
+                    
+                    // Update the original script's sound references
+                    const originalMakeMove = makeMove;
+                    window.makeMove = function(index, player) {
+                        originalMakeMove(index, player);
+                        playSound(player === 'x' ? 'playerMove' : 'aiMove');
+                    };
+                    
+                    const originalHandlePlayerWin = handlePlayerWin;
+                    window.handlePlayerWin = function() {
+                        originalHandlePlayerWin();
+                        playSound('playerWin');
+                    };
+                    
+                    const originalHandleAIWin = handleAIWin;
+                    window.handleAIWin = function() {
+                        originalHandleAIWin();
+                        playSound('aiWin');
+                    };
+                    
+                    const originalExpandBoard = expandBoard;
+                    window.expandBoard = function() {
+                        playSound('boardExpand');
+                        originalExpandBoard();
+                    };
+                    
+                    // Add click sound to restart button
+                    document.getElementById('restart-btn').addEventListener('click', () => {
+                        playSound('buttonClick');
+                    });
+                    
+                    console.log('Terminator sound effects connected successfully');
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+.victory-message {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    flex-direction: column;
+}
+
+.victory-message.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.victory-message-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--terminator-red);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px var(--terminator-red), 0 0 20px var(--terminator-red);
+    margin-bottom: 20px;
+    animation: glitch-text 0.5s linear infinite, pulse-text 2s ease-in-out infinite;
+    max-width: 80%;
+}
+
+.victory-message-subtext {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.2rem;
+    color: var(--text-light);
+    text-align: center;
+    margin-bottom: 30px;
+    max-width: 80%;
+}
+
+@keyframes pulse-text {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 600px) {
+    .victory-message-text {
+        font-size: 2rem;
+    }
+    
+    .victory-message-subtext {
+        font-size: 1rem;
+    }
+}
